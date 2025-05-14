@@ -4,6 +4,7 @@ import pandas as pd
 import datetime
 import json
 import os
+import time 
 
 # %%
 def get_response(**kwargs):
@@ -26,11 +27,27 @@ def save_data(data, option='json'):
     df.to_parquet(f'../datas/contents/parquet/{now}.parquet', index=False)
 
 # %%
-resp = get_response(page=1, per_page=100, strategy='new')
-if resp.status_code == 200:
-  print("Sucesso!")
-  data = resp.json()
-  save_data(data)
-else:
-  print('Deu ruim!')
+page = 1
+date_stop = pd.to_datetime('2024-03-01').date()
+while True:
+  print(page)
+  resp = get_response(page=page, per_page=100, strategy='new')
+  if resp.status_code == 200:
+    data = resp.json()
+    save_data(data)
+
+    date = pd.to_datetime(data[-1]['update_at']).date()
+    if len(data) < 100 or date < date_stop:
+      break
+
+    page += 1
+    time.sleep(5)
+
+  else:
+    print(resp.status_code)
+    print(resp.json())
+    time.sleep(60 * 5)
+
+
+
 # %%
